@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>InvenSpace - Logistics Warehouse Management System</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="light-mode">
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-warehouse"></i>
+                <span class="logo-text">InvenSpace</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active" data-tab="dashboard">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item" data-tab="inventory">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-boxes"></i>
+                    <span class="nav-text">Inventory Management</span>
+                </a>
+            </li>
+            <li class="nav-item" data-tab="space">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cube"></i>
+                    <span class="nav-text">Space Optimization</span>
+                </a>
+            </li>
+            <li class="nav-item" data-tab="shipment">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-shipping-fast"></i>
+                    <span class="nav-text">Shipment Handling</span>
+                </a>
+            </li>
+            <li class="nav-item" data-tab="maintenance">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-tools"></i>
+                    <span class="nav-text">Maintenance Scheduling</span>
+                </a>
+            </li>
+            <li class="nav-item" data-tab="reports">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+            <div class="top-nav-left">
+                <h1 class="app-title">InvenSpace</h1>
+            </div>
+            <div class="top-nav-right">
+                <div class="search-container">
+                    <input type="text" id="global-search" placeholder="Search..." class="search-input">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+                <div class="theme-toggle">
+                    <input type="checkbox" id="theme-switch" class="theme-switch">
+                    <label for="theme-switch" class="theme-label">
+                        <i class="fas fa-sun"></i>
+                        <i class="fas fa-moon"></i>
+                    </label>
+                </div>
+                <div class="user-menu">
+                    <button class="user-btn" id="user-btn">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Admin User</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-user"></i>
+                            Profile
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            Settings
+                        </a>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Sections -->
+        <div class="content-wrapper">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <p>Welcome to your warehouse management dashboard</p>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Total Items</h3>
+                            <p class="card-number" id="total-items">0</p>
+                            <span class="card-change positive" id="items-change">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-shipping-fast"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Active Shipments</h3>
+                            <p class="card-number" id="active-shipments">0</p>
+                            <span class="card-change positive" id="shipments-change">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Space Utilization</h3>
+                            <p class="card-number" id="space-utilization">0%</p>
+                            <span class="card-change neutral" id="space-change">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Maintenance Due</h3>
+                            <p class="card-number" id="maintenance-due">0</p>
+                            <span class="card-change negative" id="maintenance-change">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts">
+                    <div class="chart-container">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-list" id="recent-activity">
+                            <div class="activity-placeholder">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading recent activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Management Section -->
+            <section id="inventory" class="content-section">
+                <div class="section-header">
+                    <h2>Inventory Management</h2>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" id="add-item-btn">
+                            <i class="fas fa-plus"></i>
+                            Add New Item
+                        </button>
+                        <button class="btn btn-secondary" id="manage-categories-btn">
+                            <i class="fas fa-tags"></i>
+                            Manage Categories
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inventory-controls">
+                    <div class="search-container">
+                        <input type="text" id="inventory-search" placeholder="Search inventory..." class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="filter-container">
+                        <select id="category-filter" class="filter-select">
+                            <option value="">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Books">Books</option>
+                            <option value="Tools">Tools</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Location</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                            <tr>
+                                <td colspan="6" class="loading-row">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading inventory data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Space Optimization Section -->
+            <section id="space" class="content-section">
+                <div class="section-header">
+                    <h2>Space Optimization</h2>
+                    <button class="btn btn-primary" id="allocate-space-btn">
+                        <i class="fas fa-plus"></i>
+                        Allocate Space
+                    </button>
+                </div>
+
+                <div class="space-overview" id="space-overview">
+                    <div class="space-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading space allocation data...</p>
+                    </div>
+
+
+                </div>
+            </section>
+
+            <!-- Shipment Handling Section -->
+            <section id="shipment" class="content-section">
+                <div class="section-header">
+                    <h2>Shipment Handling</h2>
+                    <button class="btn btn-primary" id="add-shipment-btn">
+                        <i class="fas fa-plus"></i>
+                        New Shipment
+                    </button>
+                </div>
+
+                <div class="shipment-controls">
+                    <div class="filter-container">
+                        <select id="status-filter" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="shipment-search" placeholder="Search shipments..." class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="shipment-table">
+                        <thead>
+                            <tr>
+                                <th>Shipment ID</th>
+                                <th>Item ID</th>
+                                <th>Origin</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shipment-tbody">
+                            <tr>
+                                <td colspan="7" class="loading-row">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading shipment data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Maintenance Scheduling Section -->
+            <section id="maintenance" class="content-section">
+                <div class="section-header">
+                    <h2>Maintenance Scheduling</h2>
+                    <button class="btn btn-primary" id="add-maintenance-btn">
+                        <i class="fas fa-plus"></i>
+                        Schedule Maintenance
+                    </button>
+                </div>
+
+                <div class="maintenance-overview">
+                    <div class="maintenance-calendar">
+                        <h3>Upcoming Maintenance</h3>
+                        <div class="calendar-view">
+                            <div class="calendar-header">
+                                <button class="calendar-nav" id="prev-month">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <h4 id="current-month">January 2024</h4>
+                                <button class="calendar-nav" id="next-month">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="calendar-grid" id="calendar-grid">
+                                <!-- Calendar will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maintenance-list">
+                        <h3>Maintenance Tasks</h3>
+                        <div class="task-list">
+                            <div class="task-item">
+                                <div class="task-info">
+                                    <h4>Forklift #3 Inspection</h4>
+                                    <p>Regular safety inspection and maintenance</p>
+                                    <span class="task-date">2024-01-20</span>
+                                </div>
+                                <div class="task-status">
+                                    <span class="status-badge pending">Pending</span>
+                                    <button class="btn-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-info">
+                                    <h4>Conveyor Belt Maintenance</h4>
+                                    <p>Replace worn parts and lubricate</p>
+                                    <span class="task-date">2024-01-22</span>
+                                </div>
+                                <div class="task-status">
+                                    <span class="status-badge pending">Pending</span>
+                                    <button class="btn-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="task-item">
+                                <div class="task-info">
+                                    <h4>HVAC System Check</h4>
+                                    <p>Filter replacement and system check</p>
+                                    <span class="task-date">2024-01-25</span>
+                                </div>
+                                <div class="task-status">
+                                    <span class="status-badge pending">Pending</span>
+                                    <button class="btn-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="content-section">
+                <div class="section-header">
+                    <h2>Reports & Analytics</h2>
+                </div>
+
+                <div class="reports-container">
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label for="report-type">Report Type:</label>
+                            <select id="report-type" class="filter-select">
+                                <option value="">Select Report Type</option>
+                                <option value="inventory">Inventory Report</option>
+                                <option value="shipment">Shipment Report</option>
+                                <option value="space">Space Utilization Report</option>
+                                <option value="maintenance">Maintenance Report</option>
+                                <option value="performance">Performance Analytics</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="date-range">Date Range:</label>
+                            <select id="date-range" class="filter-select">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
+                                <option value="365">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn btn-primary" id="generate-report-btn">
+                                <i class="fas fa-chart-bar"></i>
+                                Generate Report
+                            </button>
+                            <button class="btn btn-secondary" id="download-report-btn" disabled>
+                                <i class="fas fa-download"></i>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="report-preview" id="report-preview">
+                        <div class="report-placeholder">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Select a report type and generate to view preview</h3>
+                            <p>Choose from inventory, shipment, space utilization, maintenance, or performance reports</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <h4>Total Items</h4>
+                            <p class="stat-number">1,247</p>
+                            <span class="stat-change positive">+12%</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Shipments This Month</h4>
+                            <p class="stat-number">156</p>
+                            <span class="stat-change positive">+8%</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Space Utilization</h4>
+                            <p class="stat-number">78%</p>
+                            <span class="stat-change neutral">Optimal</span>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Maintenance Completed</h4>
+                            <p class="stat-number">23</p>
+                            <span class="stat-change positive">+15%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Add/Edit Item Modal -->
+    <div class="modal" id="item-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="item-modal-title">Add New Item</h3>
+                <button class="modal-close" id="item-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="item-form" class="modal-form">
+                <div class="form-group">
+                    <label for="item-name">Item Name</label>
+                    <input type="text" id="item-name" name="itemName" required>
+                </div>
+                <div class="form-group">
+                    <label for="item-category">Category</label>
+                    <select id="item-category" name="category" required>
+                        <option value="">Select Category</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="Books">Books</option>
+                        <option value="Tools">Tools</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="item-quantity">Quantity</label>
+                    <input type="number" id="item-quantity" name="quantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="item-location">Location</label>
+                    <input type="text" id="item-location" name="location" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="item-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Shipment Modal -->
+    <div class="modal" id="shipment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="shipment-modal-title">New Shipment</h3>
+                <button class="modal-close" id="shipment-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="shipment-form" class="modal-form">
+                <div class="form-group">
+                    <label for="shipment-item">Item ID</label>
+                    <input type="text" id="shipment-item" name="itemId" required>
+                </div>
+                <div class="form-group">
+                    <label for="shipment-origin">Origin</label>
+                    <input type="text" id="shipment-origin" name="origin" required>
+                </div>
+                <div class="form-group">
+                    <label for="shipment-destination">Destination</label>
+                    <input type="text" id="shipment-destination" name="destination" required>
+                </div>
+                <div class="form-group">
+                    <label for="shipment-status">Status</label>
+                    <select id="shipment-status" name="status" required>
+                        <option value="Pending">Pending</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="shipment-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Shipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Maintenance Modal -->
+    <div class="modal" id="maintenance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="maintenance-modal-title">Schedule Maintenance</h3>
+                <button class="modal-close" id="maintenance-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="maintenance-form" class="modal-form">
+                <div class="form-group">
+                    <label for="maintenance-equipment">Equipment ID</label>
+                    <input type="text" id="maintenance-equipment" name="equipmentId" required>
+                </div>
+                <div class="form-group">
+                    <label for="maintenance-description">Task Description</label>
+                    <textarea id="maintenance-description" name="taskDescription" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="maintenance-date">Scheduled Date</label>
+                    <input type="date" id="maintenance-date" name="scheduledDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="maintenance-status">Status</label>
+                    <select id="maintenance-status" name="completionStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="maintenance-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule Maintenance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Action</h3>
+                <button class="modal-close" id="confirm-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-danger" id="confirm-action">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div class="modal" id="category-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="category-modal-title">Manage Categories</h3>
+                <button class="modal-close" id="category-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="category-form" class="modal-form">
+                <div class="form-group">
+                    <label for="category-name">Category Name</label>
+                    <input type="text" id="category-name" name="categoryName" required>
+                </div>
+                <div class="form-group">
+                    <label for="category-description">Description</label>
+                    <textarea id="category-description" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="category-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Space Allocation Modal -->
+    <div class="modal" id="space-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="space-modal-title">Allocate Space</h3>
+                <button class="modal-close" id="space-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="space-form" class="modal-form">
+                <div class="form-group">
+                    <label for="space-zone">Zone</label>
+                    <select id="space-zone" name="zone" required>
+                        <option value="">Select Zone</option>
+                        <option value="A">Zone A - Electronics</option>
+                        <option value="B">Zone B - Clothing</option>
+                        <option value="C">Zone C - Books</option>
+                        <option value="D">Zone D - Tools</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="space-item">Item ID</label>
+                    <input type="text" id="space-item" name="itemId" required>
+                </div>
+                <div class="form-group">
+                    <label for="space-quantity">Quantity</label>
+                    <input type="number" id="space-quantity" name="quantity" min="1" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="space-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Allocate Space</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html> 

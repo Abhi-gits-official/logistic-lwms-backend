@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thymeleaf Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .info {
+            color: #2196F3;
+        }
+        .timestamp {
+            color: #FF9800;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🎉 Thymeleaf Test Page</h1>
+        
+        <div class="success">
+            <h2>✅ Thymeleaf is Working!</h2>
+            <p th:text="${message}">Default message</p>
+        </div>
+        
+        <div class="info">
+            <h3>📊 System Information:</h3>
+            <ul>
+                <li><strong>Application:</strong> LWMS (Logistics Warehouse Management System)</li>
+                <li><strong>Template Engine:</strong> Thymeleaf</li>
+                <li><strong>Spring Boot Version:</strong> 3.5.3</li>
+                <li><strong>Java Version:</strong> 21</li>
+            </ul>
+        </div>
+        
+        <div class="timestamp">
+            <p><strong>Generated at:</strong> <span th:text="${#dates.format(#dates.createNow(), 'dd-MM-yyyy HH:mm:ss')}">timestamp</span></p>
+            <p><strong>Unix timestamp:</strong> <span th:text="${timestamp}">timestamp</span></p>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <h3>🔗 Test Links:</h3>
+            <ul>
+                <li><a href="/thymeleaf/admin/home" style="color: #FFD700;">Admin Home (Thymeleaf)</a></li>
+                <li><a href="/thymeleaf/admin/dashboard" style="color: #FFD700;">Admin Dashboard (Thymeleaf)</a></li>
+                <li><a href="/admin/home.html" style="color: #FFD700;">Static Admin Home</a></li>
+                <li><a href="/test/health" style="color: #FFD700;">Health Check API</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 
