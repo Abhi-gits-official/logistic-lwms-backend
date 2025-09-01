@@ -9,46 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const loginSubtitle = document.querySelector('.login-subtitle');
     const modules = document.querySelectorAll('.module');
     const toast = document.getElementById('toast');
-    let darkMode = false;
-
-    // Form validation
+    let darkMode = false;    // Form elements (but no custom submit handler)
     const loginForm = document.getElementById('login-form');
-    const usernameInput = loginForm.querySelector('input[type="text"]');
-    const passwordInput = loginForm.querySelector('input[type="password"]');
-
-    // Create error message element
-    let errorMsg = document.createElement('div');
-    errorMsg.className = "alert alert-danger mt-2";
-    errorMsg.style.display = "none";
-    loginForm.insertBefore(errorMsg, loginForm.querySelector('button'));
-
-    loginForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-
-        const usernameRegex = /^[a-z0-9@_]+$/;
-        const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{6,}$/;
-
-        if (!usernameRegex.test(username)) {
-            errorMsg.textContent = "Username must be lowercase, alphanumeric, and can only contain @ or _";
-            errorMsg.style.display = "block";
-            usernameInput.focus();
-            return;
-        }
-        if (!passwordRegex.test(password)) {
-            errorMsg.textContent = "Password must be at least 6 characters, alphanumeric, and contain at least one letter and one number.";
-            errorMsg.style.display = "block";
-            passwordInput.focus();
-            return;
-        }
-
-        errorMsg.style.display = "none";
-
-        // ✅ Redirect to home page after successful validation
-        window.location.href = "/thymeleaf/admin/home";
-    });
-
+    
+    // Remove the custom login form submit handler so the form submits to the backend
+    // The form will now submit normally to /thymeleaf/admin/login
 
     themeToggle.addEventListener('click', () => {
         darkMode = !darkMode;

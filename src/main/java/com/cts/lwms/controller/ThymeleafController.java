@@ -4,24 +4,29 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+//import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.cts.lwms.service.InventoryService;
 import com.cts.lwms.service.ShipmentService;
 import com.cts.lwms.service.SpaceService;
+
+import jakarta.servlet.http.HttpSession;
+
 import com.cts.lwms.service.CategoryService;
 import com.cts.lwms.service.MaintenanceService;
-import com.cts.lwms.model.Category;
 import com.cts.lwms.model.Inventory;
 import com.cts.lwms.model.Shipment;
 import com.cts.lwms.model.Space;
 import com.cts.lwms.model.MaintenanceSchedule;
 import com.cts.lwms.dto.DashboardStatsDTO;
 import com.cts.lwms.dto.ActivityDTO;
-import com.cts.lwms.dto.MenuItemDTO;
+import com.cts.lwms.model.User;
+import com.cts.lwms.repo.UserRepository;
+import com.cts.lwms.service.JwtUtil;
 
 import java.util.*;
-// import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/thymeleaf")
@@ -42,42 +47,66 @@ public class ThymeleafController {
     @Autowired
     private MaintenanceService maintenanceService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @GetMapping("/admin/login")
     public String adminLogin(Model model) {
+        model.addAttribute("pageTitle", "InvenSpace - Login");
+        model.addAttribute("systemName", "Logistics Warehouse Management System");
+        return "admin/login";
+    }
+
+    @PostMapping("/admin/login")
+    public String handleLogin(@RequestParam("username") String username,
+                              @RequestParam("password") String password,
+                              HttpSession session,
+                              Model model) {
         try {
-            model.addAttribute("pageTitle", "InvenSpace - Login");
-            model.addAttribute("systemName", "Logistics Warehouse Management System");
-            return "admin/login";
+            User user = userRepository.findByUsername(username);
+            if (user == null) {
+                model.addAttribute("error", "User not found");
+                return "admin/login";
+            }
+            if (!user.getPassword().equals(password)) {
+                model.addAttribute("error", "Invalid password");
+                return "admin/login";
+            }
+            String token = jwtUtil.generateToken(username);
+            session.setAttribute("jwt", token);
+            session.setAttribute("user", username);
+            return "redirect:/thymeleaf/admin/home";
         } catch (Exception e) {
-            model.addAttribute("error", "Failed to load login page: " + e.getMessage());
-            return "error";
+            model.addAttribute("error", "Login failed: " + e.getMessage());
+            return "admin/login";
         }
     }
 
     @GetMapping("/admin/home")
-    public String adminHome(Model model) {
-        try {
-            // Add dynamic data to the model
-            model.addAttribute("pageTitle", "InvenSpace - Admin Dashboard");
-            model.addAttribute("systemName", "Logistics Warehouse Management System");
-            
-            // Load dashboard data for the home page
-            loadDashboardData(model);
-            
-            // Add service availability status
-            model.addAttribute("inventoryServiceAvailable", inventoryService != null);
-            model.addAttribute("shipmentServiceAvailable", shipmentService != null);
-            model.addAttribute("spaceServiceAvailable", spaceService != null);
-            model.addAttribute("categoryServiceAvailable", categoryService != null);
-            
-            return "admin/home";
-        } catch (Exception e) {
-            model.addAttribute("error", "Failed to load admin dashboard: " + e.getMessage());
-            return "error";
+    public String adminHome(Model model, HttpSession session) {
+        String token = (String) session.getAttribute("jwt");
+        String username = (String) session.getAttribute("user");
+        if (token == null || username == null || !jwtUtil.validateToken(token, username)) {
+            return "redirect:/thymeleaf/admin/login";
         }
+        model.addAttribute("pageTitle", "InvenSpace - Admin Dashboard");
+        model.addAttribute("systemName", "Logistics Warehouse Management System");
+        loadDashboardData(model);
+        model.addAttribute("inventoryServiceAvailable", inventoryService != null);
+        model.addAttribute("shipmentServiceAvailable", shipmentService != null);
+        model.addAttribute("spaceServiceAvailable", spaceService != null);
+        model.addAttribute("categoryServiceAvailable", categoryService != null);
+        return "admin/home";
     }
 
-    // Dashboard endpoint removed - redirecting to home instead
+    @GetMapping("/admin/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/thymeleaf/admin/login";
+    }
 
     @GetMapping("/test")
     public String testPage(Model model) {
@@ -86,18 +115,7 @@ public class ThymeleafController {
         return "test";
     }
 
-    // Helper methods
-    private List<MenuItemDTO> createMenuItems(String activeSection) {
-        List<MenuItemDTO> menuItems = Arrays.asList(
-            new MenuItemDTO("dashboard", "Dashboard", "#", "fas fa-tachometer-alt", "dashboard".equals(activeSection)),
-            new MenuItemDTO("inventory", "Inventory", "#", "fas fa-boxes", "inventory".equals(activeSection)),
-            new MenuItemDTO("shipment", "Shipment", "#", "fas fa-shipping-fast", "shipment".equals(activeSection)),
-            new MenuItemDTO("space", "Space", "#", "fas fa-map-marked-alt", "space".equals(activeSection)),
-            new MenuItemDTO("maintenance", "Maintenance", "#", "fas fa-tools", "maintenance".equals(activeSection)),
-            new MenuItemDTO("reports", "Reports", "#", "fas fa-chart-bar", "reports".equals(activeSection))
-        );
-        return menuItems;
-    }
+
 
     private void loadDashboardData(Model model) {
         try {
@@ -122,7 +140,7 @@ public class ThymeleafController {
             if (spaces != null && !spaces.isEmpty()) {
                 double totalCapacity = spaces.stream().mapToDouble(Space::getTotalCapacity).sum();
                 double usedCapacity = spaces.stream().mapToDouble(Space::getUsedCapacity).sum();
-                int utilization = (int) ((usedCapacity / totalCapacity) * 100);
+                int utilization = totalCapacity > 0 ? (int) ((usedCapacity / totalCapacity) * 100) : 0;
                 stats.setSpaceUtilization(utilization + "%");
                 stats.setSpaceChange(utilization + "% utilized");
             } else {
@@ -164,56 +182,6 @@ public class ThymeleafController {
         }
     }
 
-    private void loadInventoryData(Model model) {
-        try {
-            List<Inventory> inventoryItems = inventoryService.viewInventory();
-            List<Category> categories = categoryService.getAllCategories();
-            
-            model.addAttribute("inventoryItems", inventoryItems != null ? inventoryItems : new ArrayList<>());
-            model.addAttribute("categories", categories != null ? categories : new ArrayList<>());
-            
-        } catch (Exception e) {
-            model.addAttribute("inventoryItems", new ArrayList<>());
-            model.addAttribute("categories", new ArrayList<>());
-        }
-    }
-
-    private void loadShipmentData(Model model) {
-        try {
-            List<Shipment> shipments = shipmentService.getAllShipments();
-            model.addAttribute("shipments", shipments != null ? shipments : new ArrayList<>());
-        } catch (Exception e) {
-            model.addAttribute("shipments", new ArrayList<>());
-        }
-    }
-
-    private void loadSpaceData(Model model) {
-        try {
-            List<Space> spaces = spaceService.viewSpaceUsage();
-            model.addAttribute("spaceZones", spaces != null ? spaces : new ArrayList<>());
-        } catch (Exception e) {
-            model.addAttribute("spaceZones", new ArrayList<>());
-        }
-    }
-
-    private void loadMaintenanceData(Model model) {
-        try {
-            List<MaintenanceSchedule> maintenanceSchedules = maintenanceService.viewSchedule();
-            model.addAttribute("maintenanceSchedules", maintenanceSchedules != null ? maintenanceSchedules : new ArrayList<>());
-        } catch (Exception e) {
-            model.addAttribute("maintenanceSchedules", new ArrayList<>());
-        }
-    }
-
-    private void loadReportsData(Model model) {
-        try {
-            // Add any report-specific data here
-            model.addAttribute("reportTypes", Arrays.asList("Inventory", "Shipment", "Space", "Maintenance"));
-        } catch (Exception e) {
-            model.addAttribute("reportTypes", new ArrayList<>());
-        }
-    }
-
     private List<ActivityDTO> createRecentActivities(List<Inventory> inventoryItems, List<Shipment> shipments, List<Space> spaces) {
         List<ActivityDTO> activities = new ArrayList<>();
         
@@ -245,4 +213,4 @@ public class ThymeleafController {
         
         return activities;
     }
-} 
+}

@@ -98,4 +98,8 @@ public class ShipmentService {
         System.out.println("Updated shipment with ID: " + updated.getShipmentId());
         return updated;
     }
+
+    public void deleteShipment(Integer shipmentId) {
+        shipmentRepo.deleteById(shipmentId);
+    }
 }

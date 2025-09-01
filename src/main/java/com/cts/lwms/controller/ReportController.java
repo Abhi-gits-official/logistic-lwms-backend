@@ -29,4 +29,9 @@ public class ReportController {
     public ResponseEntity<List<Report>> getAllReports() {
         return ResponseEntity.ok(reportService.getAllReports());
     }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> testReportAPI() {
+        return ResponseEntity.ok("Report API is working correctly!");
+    }
 }

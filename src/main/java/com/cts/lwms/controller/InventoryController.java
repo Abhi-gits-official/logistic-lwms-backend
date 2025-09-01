@@ -53,24 +53,24 @@ public class InventoryController {
         System.out.println("Updating InventoryDTO: " + itemDto);
         System.out.println("Category ID: " + itemDto.getCategoryId());
         
-        Inventory item = new Inventory();
-        item.setItemId(itemDto.getItemId());
-        item.setItemName(itemDto.getItemName());
+        // Fetch existing item from DB
+        Inventory existingItem = inventoryService.getItemById(itemDto.getItemId())
+            .orElseThrow(() -> new RuntimeException("Inventory item not found for update"));
         
+        existingItem.setItemName(itemDto.getItemName());
         // Set category by ID
         if (itemDto.getCategoryId() != null) {
             Category category = categoryService.getCategoryById(itemDto.getCategoryId());
             System.out.println("Found category for update: " + category);
-            item.setCategory(category);
+            existingItem.setCategory(category);
         } else {
             System.out.println("No category ID provided for update, setting category to null");
+            existingItem.setCategory(null);
         }
-        
-        item.setQuantity(itemDto.getQuantity());
-        item.setLocation(itemDto.getLocation());
-        
-        System.out.println("Final Inventory item for update: " + item);
-        return ResponseEntity.ok(inventoryService.updateItem(item));
+        existingItem.setQuantity(itemDto.getQuantity());
+        existingItem.setLocation(itemDto.getLocation());
+        System.out.println("Final Inventory item for update: " + existingItem);
+        return ResponseEntity.ok(inventoryService.updateItem(existingItem));
     }
 
     @DeleteMapping("/remove/{itemId}")

@@ -78,7 +78,7 @@ cd lwms
 cd lwms
 
 # Start the Spring Boot application
-.\mvnw.cmd spring-boot:run
+mvn spring-boot:run
 ```
 
 ### 4. **Access the Application**
@@ -338,4 +338,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 **Frontend**: ✅ **Fully Integrated**  
 **Backend**: ✅ **All APIs Working**  
 **Documentation**: ✅ **Complete and Current**  
-**Support**: ✅ **Available** 
+**Support**: ✅ **Available**

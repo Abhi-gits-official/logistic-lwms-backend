@@ -130,6 +130,16 @@ public class ShipmentController {
         }
     }
 
+    @DeleteMapping("/delete/{shipmentId}")
+    public ResponseEntity<Void> deleteShipment(@PathVariable Integer shipmentId) {
+        Optional<Shipment> shipmentOpt = shipmentService.getShipmentById(shipmentId);
+        if (!shipmentOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        shipmentService.deleteShipment(shipmentId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/track/{shipmentId}")
     public ResponseEntity<Optional<ShipmentTrackingDTO>> trackShipment(@PathVariable Integer shipmentId) {
         System.out.println("=== SHIPMENT TRACK REQUEST ===");

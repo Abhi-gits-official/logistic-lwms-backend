@@ -27,35 +27,47 @@ public class Report {
     @Lob
     private String details;
 
-	public Integer getReportId() {
-		return reportId;
-	}
+    // Default constructor
+    public Report() {
+        this.generatedOn = new Date();
+    }
 
-	public void setReportId(Integer reportId) {
-		this.reportId = reportId;
-	}
+    // Constructor with parameters
+    public Report(String reportType, String details) {
+        this.reportType = reportType;
+        this.details = details;
+        this.generatedOn = new Date();
+    }
 
-	public String getReportType() {
-		return reportType;
-	}
+    public Integer getReportId() {
+        return reportId;
+    }
 
-	public void setReportType(String reportType) {
-		this.reportType = reportType;
-	}
+    public void setReportId(Integer reportId) {
+        this.reportId = reportId;
+    }
 
-	public Date getGeneratedOn() {
-		return generatedOn;
-	}
+    public String getReportType() {
+        return reportType;
+    }
 
-	public void setGeneratedOn(Date generatedOn) {
-		this.generatedOn = generatedOn;
-	}
+    public void setReportType(String reportType) {
+        this.reportType = reportType;
+    }
 
-	public String getDetails() {
-		return details;
-	}
+    public Date getGeneratedOn() {
+        return generatedOn;
+    }
 
-	public void setDetails(String details) {
-		this.details = details;
-	}
+    public void setGeneratedOn(Date generatedOn) {
+        this.generatedOn = generatedOn;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
+    }
 }

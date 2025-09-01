@@ -20,9 +20,10 @@ const API_ENDPOINTS = {
     // Shipment API
     SHIPMENT: {
         RECEIVE: '/shipment/receive',
-        DISPATCH: '/shipment/dispatch', // Will be used as /shipment/dispatch/{shipmentId}
+        DISPATCH: '/shipment/dispatch',
         TRACK: '/shipment/track',
-        ALL: '/shipment/all'
+        ALL: '/shipment/all',
+        DELETE: '/shipment/delete'
     },
     // Space API
     SPACE: {
@@ -570,12 +571,14 @@ function filterInventoryTable() {
                     return;
                 }
                 
-                const itemName = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
-                const category = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
-                const quantity = row.cells[2] ? row.cells[2].textContent : '';
-                const location = row.cells[3] ? row.cells[3].textContent.toLowerCase() : '';
+                const itemId = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+                const itemName = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+                const category = row.cells[2] ? row.cells[2].textContent.toLowerCase() : '';
+                const quantity = row.cells[3] ? row.cells[3].textContent : '';
+                const location = row.cells[4] ? row.cells[4].textContent.toLowerCase() : '';
                 
                 const matchesSearch = !searchTerm || 
+                    itemId.includes(searchTerm) || 
                     itemName.includes(searchTerm) || 
                     quantity.includes(searchTerm) || 
                     location.includes(searchTerm);
@@ -584,7 +587,7 @@ function filterInventoryTable() {
                     category.includes(categoryFilterValue.toLowerCase());
                 
                 console.log('Row filtering:', { 
-                    itemName, category, quantity, location, 
+                    itemId, itemName, category, quantity, location, 
                     searchTerm, categoryFilterValue, 
                     matchesSearch, matchesCategory 
                 });
@@ -668,6 +671,7 @@ async function loadInventoryData() {
         if (inventoryData && inventoryData.length > 0) {
             tbody.innerHTML = inventoryData.map(item => `
                 <tr data-item-id="${item.itemId}">
+                    <td>${item.itemId}</td>
                     <td>${item.itemName}</td>
                     <td><span class="category-badge ${item.category ? item.category.categoryName.toLowerCase().replace(/\s+/g, '-') : 'uncategorized'}">${item.category ? item.category.categoryName : 'Uncategorized'}</td>
                     <td>${item.quantity}</td>
@@ -981,13 +985,17 @@ async function loadSpaceData() {
 }
 
 // Maintenance Management Functions
+let globalMaintenanceData = [];
+
 async function loadMaintenanceData() {
     try {
         const maintenanceTasks = document.getElementById('maintenance-tasks');
         maintenanceTasks.innerHTML = '<div class="task-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Loading maintenance tasks...</p></div>';
-        
+
+        // Fetch maintenance data from backend
         const maintenanceData = await apiCall(API_ENDPOINTS.MAINTENANCE.VIEW);
-        
+        globalMaintenanceData = maintenanceData || [];
+
         if (maintenanceData && maintenanceData.length > 0) {
             maintenanceTasks.innerHTML = maintenanceData.map(maintenance => `
                 <div class="task-item">
@@ -1007,6 +1015,8 @@ async function loadMaintenanceData() {
         } else {
             maintenanceTasks.innerHTML = '<div class="task-placeholder"><p>No maintenance tasks found</p></div>';
         }
+        // Re-render calendar to update maintenance highlights
+        renderCalendar();
     } catch (error) {
         console.error('Failed to load maintenance data:', error);
         document.getElementById('maintenance-tasks').innerHTML = '<div class="task-placeholder"><p>Failed to load maintenance data</p></div>';
@@ -1266,19 +1276,14 @@ function initializeTableActions() {
  });
 }
 function editInventoryItem(row) {
- const cells = row.cells;
- const itemName = cells[0].textContent;
- const category = cells[1].textContent.replace(/[^\w\s]/g, '').trim();
- const quantity = cells[2].textContent;
- const location = cells[3].textContent;
- 
- // Populate form
- document.getElementById('item-name').value = itemName;
- document.getElementById('item-category').value = category;
- document.getElementById('item-quantity').value = quantity;
- document.getElementById('item-location').value = location;
- 
- openModal(itemModal, 'Edit Item');
+    const itemId = row.dataset.itemId || row.getAttribute('data-id');
+    if (!itemId) {
+        showToast('Item ID not found for edit', 'error');
+        return;
+    }
+    loadInventoryItemForEdit(itemId);
+    itemForm.dataset.editBtn = itemId;
+    openModal(itemModal, 'Edit Item');
 }
 async function deleteInventoryItem(row) {
     const itemName = row.cells[0].textContent;
@@ -1302,27 +1307,41 @@ async function deleteInventoryItem(row) {
     });
 }
 function editShipment(row) {
- const cells = row.cells;
- const itemId = cells[1].textContent;
- const origin = cells[2].textContent;
- const destination = cells[3].textContent;
- const status = cells[4].textContent.replace(/[^\w\s]/g, '').trim();
- 
- // Populate form
- document.getElementById('shipment-item').value = itemId;
- document.getElementById('shipment-origin').value = origin;
- document.getElementById('shipment-destination').value = destination;
- document.getElementById('shipment-status').value = status;
- 
- openModal(shipmentModal, 'Edit Shipment');
+    const shipmentId = row.dataset.shipmentId || row.getAttribute('data-id');
+    if (!shipmentId) {
+        showToast('Shipment ID not found for edit', 'error');
+        return;
+    }
+    // Load shipment data for edit (implement if needed)
+    shipmentForm.dataset.editBtn = shipmentId;
+    // Populate form fields from row
+    const cells = row.cells;
+    document.getElementById('shipment-item').value = cells[1].textContent;
+    document.getElementById('shipment-origin').value = cells[2].textContent;
+    document.getElementById('shipment-destination').value = cells[3].textContent;
+    document.getElementById('shipment-status').value = cells[4].textContent.replace(/[^ -]/g, '').trim();
+    openModal(shipmentModal, 'Edit Shipment');
 }
-function deleteShipment(row) {
- const shipmentId = row.cells[0].textContent;
- showConfirmModal(`Are you sure you want to delete shipment 
-"${shipmentId}"?`, () => {
- row.remove();
- showToast(`Shipment "${shipmentId}" deleted successfully`, 'success');
- });
+async function deleteShipment(row) {
+    const shipmentId = row.dataset.shipmentId || row.getAttribute('data-id');
+    if (!shipmentId) {
+        showToast('Shipment ID not found for delete', 'error');
+        return;
+    }
+    showConfirmModal(`Are you sure you want to delete shipment "${shipmentId}"?`, async () => {
+        try {
+            showLoading();
+            await apiCall(`${API_ENDPOINTS.SHIPMENT.DELETE}/${shipmentId}`, 'DELETE');
+            row.remove();
+            showToast(`Shipment "${shipmentId}" deleted successfully`, 'success');
+            await loadDashboardData();
+        } catch (error) {
+            console.error('Failed to delete shipment:', error);
+            showToast('Failed to delete shipment', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
 }
 // Form Functionality
 function initializeForms() {
@@ -1386,17 +1405,13 @@ async function handleItemSubmit() {
 async function handleShipmentSubmit() {
     try {
         showLoading();
-        
         const formData = new FormData(shipmentForm);
         const itemIdInput = formData.get('itemId');
-        
-        // Validate Item ID
         if (!itemIdInput || itemIdInput.trim() === '') {
             hideLoading();
             showToast('Item ID is required', 'error');
             return;
         }
-        
         const shipmentData = {
             itemId: parseInt(itemIdInput),
             origin: formData.get('origin'),
@@ -1404,25 +1419,24 @@ async function handleShipmentSubmit() {
             status: formData.get('status'),
             expectedDeliveryDate: new Date().toISOString()
         };
-        
-        // Call the backend API to create shipment
-        const savedShipment = await apiCall(API_ENDPOINTS.SHIPMENT.RECEIVE, 'POST', shipmentData);
-        
-        if (savedShipment) {
+        const editShipmentId = shipmentForm.dataset.editBtn;
+        if (editShipmentId) {
+            // Update existing shipment
+            await apiCall(`${API_ENDPOINTS.SHIPMENT.DISPATCH}/${editShipmentId}`, 'PUT', shipmentData);
+            showToast('Shipment updated successfully', 'success');
+            delete shipmentForm.dataset.editBtn;
+        } else {
+            // Create new shipment
+            await apiCall(API_ENDPOINTS.SHIPMENT.RECEIVE, 'POST', shipmentData);
             showToast('Shipment created successfully', 'success');
-            
-            // Refresh shipment data and dashboard
-            await loadShipmentData();
-            await loadDashboardData();
-            
-            // Close modal and reset form
-            closeModal(shipmentModal);
-            shipmentForm.reset();
         }
-        
+        await loadShipmentData();
+        await loadDashboardData();
+        closeModal(shipmentModal);
+        shipmentForm.reset();
     } catch (error) {
-        console.error('Failed to create shipment:', error);
-        showToast('Failed to create shipment: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Failed to create/update shipment:', error);
+        showToast('Failed to create/update shipment: ' + (error.message || 'Unknown error'), 'error');
     } finally {
         hideLoading();
     }
@@ -1435,7 +1449,7 @@ async function handleMaintenanceSubmit() {
         const maintenanceData = {
             equipmentId: parseInt(formData.get('equipmentId')),
             taskDescription: formData.get('taskDescription'),
-            scheduledDate: form.get('scheduledDate'),
+            scheduledDate: formData.get('scheduledDate'),
             completionStatus: formData.get('completionStatus')
         };
         
@@ -1456,6 +1470,7 @@ async function handleMaintenanceSubmit() {
         // Refresh maintenance data
         await loadMaintenanceData();
         closeModal(maintenanceModal);
+        maintenanceForm.reset(); // <-- Add this line to reset form only once
         
     } catch (error) {
         console.error('Failed to save maintenance:', error);
@@ -1463,7 +1478,7 @@ async function handleMaintenanceSubmit() {
     } finally {
         hideLoading();
     }
-}
+} // <-- Add this closing bracket to properly end handleMaintenanceSubmit
 
 async function handleSpaceSubmit() {
     try {
@@ -1526,90 +1541,83 @@ function changeMonth(delta) {
  renderCalendar();
 }
 function renderCalendar() {
- const year = currentDate.getFullYear();
- const month = currentDate.getMonth();
- 
- currentMonth.textContent = new Date(year, month).toLocaleDateString('en-US',
-{ 
- year: 'numeric', 
- month: 'long' 
- });
- 
- const firstDay = new Date(year, month, 1);
- const lastDay = new Date(year, month + 1, 0);
- const startDate = new Date(firstDay);
- startDate.setDate(startDate.getDate() - firstDay.getDay());
- 
- calendarGrid.innerHTML = '';
- 
- // Add day headers
- const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
- days.forEach(day => {
- const dayHeader = document.createElement('div');
- dayHeader.className = 'calendar-day';
- dayHeader.textContent = day;
- dayHeader.style.fontWeight = 'bold';
- calendarGrid.appendChild(dayHeader);
- });
- 
- // Add calendar days
- for (let i = 0; i < 42; i++) {
- const date = new Date(startDate);
- date.setDate(startDate.getDate() + i);
- 
- const dayElement = document.createElement('div');
- dayElement.className = 'calendar-day';
- dayElement.textContent = date.getDate();
- 
- // Check if it's today
- const today = new Date();
- if (date.toDateString() === today.toDateString()) {
- dayElement.classList.add('today');
- }
- 
- // Check if it has maintenance (simulate some dates)
- const maintenanceDates = [20, 22, 25]; // Sample dates
- if (maintenanceDates.includes(date.getDate()) && date.getMonth() === 
-month) {
- dayElement.classList.add('has-maintenance');
- }
- 
- calendarGrid.appendChild(dayElement);
- }
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    currentMonth.textContent = new Date(year, month).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long'
+    });
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    calendarGrid.innerHTML = '';
+    
+    // Add day headers
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    days.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day';
+        dayHeader.textContent = day;
+        dayHeader.style.fontWeight = 'bold';
+        calendarGrid.appendChild(dayHeader);
+    });
+    
+    // Prepare maintenance dates for current month
+    const maintenanceDates = (globalMaintenanceData || [])
+        .filter(m => m.completionStatus && m.completionStatus.toLowerCase() === 'pending' && new Date(m.scheduledDate).getMonth() === month && new Date(m.scheduledDate).getFullYear() === year)
+        .map(m => new Date(m.scheduledDate).getDate());
+    
+    // Add calendar days
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+    
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.textContent = date.getDate();
+    
+        // Check if it's today
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+            dayElement.classList.add('today');
+        }
+    
+        // Mark maintenance days (pending only)
+        if (maintenanceDates.includes(date.getDate()) && date.getMonth() === month && date.getFullYear() === year) {
+            dayElement.classList.add('has-maintenance');
+            dayElement.title = 'Pending Maintenance';
+        }
+    
+        calendarGrid.appendChild(dayElement);
+    }
 }
 // Reports Functionality
 function initializeReports() {
  if (!generateReportBtn) return;
  
  generateReportBtn.addEventListener('click', generateReport);
- downloadReportBtn.addEventListener('click', downloadReport);
 }
+
 async function generateReport() {
-    const reportTypeValue = reportType.value;
-    const dateRangeValue = dateRange.value;
-    
-    if (!reportTypeValue) {
-        showToast('Please select a report type', 'warning');
-        return;
-    }
-    
     try {
         showLoading();
-        
+        const reportTypeValue = reportType.value;
+        const dateRangeValue = dateRange.value;
         const reportData = {
             reportType: reportTypeValue,
             details: `${reportTypeValue} report for the last ${dateRangeValue} days`
         };
-        
         const generatedReport = await apiCall(API_ENDPOINTS.REPORT.GENERATE, 'POST', reportData);
-        
         if (generatedReport) {
             const reportContent = generateReportContent(reportTypeValue, dateRangeValue, generatedReport);
             reportPreview.innerHTML = reportContent;
             downloadReportBtn.disabled = false;
             showToast('Report generated successfully', 'success');
         }
-        
     } catch (error) {
         console.error('Failed to generate report:', error);
         showToast('Failed to generate report', 'error');
@@ -1636,6 +1644,54 @@ Date().toISOString().split('T')[0]}.txt`;
  
  showToast('Report downloaded successfully', 'success');
 }
+
+function generateReportContent(reportType, dateRange, reportData) {
+    return `
+        <div class="report-content">
+            <h3>${reportType.toUpperCase()} REPORT</h3>
+            <div class="report-stats">
+                <div class="report-stat">
+                    <h4>Report Type</h4>
+                    <p>${reportType}</p>
+                </div>
+                <div class="report-stat">
+                    <h4>Date Range</h4>
+                    <p>Last ${dateRange} days</p>
+                </div>
+                <div class="report-stat">
+                    <h4>Generated On</h4>
+                    <p>${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="report-stat">
+                    <h4>Report ID</h4>
+                    <p>${reportData.reportId || 'N/A'}</p>
+                </div>
+            </div>
+            <div class="report-details">
+                <h4>Report Details</h4>
+                <p>${reportData.details || 'No additional details available.'}</p>
+            </div>
+            <div class="report-chart">
+                <h4>Summary Data</h4>
+                <div class="chart-bars">
+                    <div class="chart-bar">
+                        <span>Data Points</span>
+                        <div class="bar" style="width: 80%;">80%</div>
+                    </div>
+                    <div class="chart-bar">
+                        <span>Completeness</span>
+                        <div class="bar" style="width: 95%;">95%</div>
+                    </div>
+                    <div class="chart-bar">
+                        <span>Accuracy</span>
+                        <div class="bar" style="width: 90%;">90%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Utility Functions
 function showLoading() {
  loadingSpinner.classList.add('show');
